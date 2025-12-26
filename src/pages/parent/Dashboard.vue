@@ -34,11 +34,21 @@
               
               <!-- Athlete Switcher (only if multiple) -->
               <div v-if="athletes.length > 1" class="dropdown">
-                <button class="btn btn-sm btn-white-soft rounded-pill ps-3 pe-2 py-1 d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <button 
+                  class="btn btn-sm btn-white-soft rounded-pill ps-3 pe-2 py-1 d-flex align-items-center" 
+                  type="button" 
+                  @click="toggleAthleteSwitcher"
+                  @blur="closeAthleteSwitcher"
+                >
                   <span class="small fw-bold me-2">Switch</span>
                   <i class="bi bi-chevron-down small"></i>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg animate slideIn">
+                <ul 
+                  v-if="showAthleteSwitcher"
+                  class="dropdown-menu dropdown-menu-end border-0 shadow-lg animate slideIn show"
+                  style="position: absolute; right: 0;"
+                  @mousedown.prevent
+                >
                   <li v-for="athlete in athletes" :key="athlete.id">
                     <button 
                       class="dropdown-item d-flex align-items-center py-2" 
@@ -156,6 +166,17 @@ const selectedAthlete = ref(null)
 const loading = ref(true)
 const loadingEvents = ref(false)
 const upcomingEvents = ref([])
+const showAthleteSwitcher = ref(false)
+
+const toggleAthleteSwitcher = () => {
+  showAthleteSwitcher.value = !showAthleteSwitcher.value
+}
+
+const closeAthleteSwitcher = () => {
+  setTimeout(() => {
+    showAthleteSwitcher.value = false
+  }, 200)
+}
 
 const menuItems = [
   { label: 'My Athletes', path: '/parent/athletes', icon: 'bi-people', color: 'secondary' },
@@ -188,6 +209,7 @@ const fetchAthletes = async () => {
 }
 
 const selectAthlete = (athlete) => {
+  showAthleteSwitcher.value = false
   selectedAthlete.value = athlete
   // Ideally, save this preference or emit an event
   // For now, it just updates the local view context

@@ -303,17 +303,27 @@ onMounted(async () => {
 
 /* Fix z-index stacking context */
 .athlete-card-wrapper {
-  transition: z-index 0s;
+  position: relative;
+  z-index: 1;
 }
 
 .athlete-card-wrapper:hover {
-  z-index: 20;
-  position: relative;
+  z-index: 10;
 }
 
 /* Ensure card with open dropdown is always on top */
-.athlete-card-wrapper:has(.show) {
-  z-index: 100 !important;
-  position: relative;
+.athlete-card-wrapper:has(.dropdown.show),
+.athlete-card-wrapper:has(.dropdown-menu.show) {
+  z-index: 1050 !important;
+}
+
+/* Ensure dropdown menu appears above everything */
+.dropdown-menu {
+  z-index: 1060;
+}
+
+/* Fix card overflow to allow dropdown to show */
+.card {
+  overflow: visible !important;
 }
 </style>

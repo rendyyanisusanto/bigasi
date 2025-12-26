@@ -87,14 +87,31 @@ export function useAuth() {
     const logout = async () => {
         try {
             loading.value = true
+
+            // Try to sign out from Supabase
+            // If session is already missing, this will fail but that's okay
             const { error } = await supabase.auth.signOut()
-            if (error) throw error
+
+            // Only log error if it's NOT a session missing error
+            if (error && error.message !== 'Auth session missing!') {
+                console.error('Logout error:', error)
+            }
+
+            // Always clear local state regardless of signOut result
             user.value = null
             profile.value = null
+
             return { success: true }
         } catch (error) {
+            // Handle any unexpected errors
             console.error('Logout error:', error)
-            return { success: false, error: error.message }
+
+            // Still clear local state even if logout fails
+            user.value = null
+            profile.value = null
+
+            // Return success since local state was cleared
+            return { success: true }
         } finally {
             loading.value = false
         }

@@ -74,10 +74,20 @@
               <!-- Action Section -->
               <div class="flex-shrink-0 ms-2">
                 <div class="dropdown">
-                  <button class="btn btn-icon btn-light rounded-circle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button 
+                    class="btn btn-icon btn-light rounded-circle shadow-none" 
+                    type="button" 
+                    @click="toggleDropdown(sport.id)"
+                    @blur="closeDropdown(sport.id)"
+                  >
                     <i class="bi bi-three-dots-vertical text-muted"></i>
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 overflow-hidden">
+                  <ul 
+                    v-if="openDropdownId === sport.id"
+                    class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 overflow-hidden show"
+                    style="position: absolute; right: 0;"
+                    @mousedown.prevent
+                  >
                     <li>
                       <button class="dropdown-item py-2 px-3 small fw-medium" @click="editSport(sport)">
                         <i class="bi bi-pencil me-2 text-primary"></i>Edit Details
@@ -271,6 +281,7 @@ const selectedSport = ref(null)
 const activeTab = ref('assigned')
 const athleteSearch = ref('')
 const assignLoading = ref(false)
+const openDropdownId = ref(null)
 
 const form = ref({
   id: null,
@@ -279,6 +290,18 @@ const form = ref({
   schedule: '',
   description: ''
 })
+
+const toggleDropdown = (sportId) => {
+  openDropdownId.value = openDropdownId.value === sportId ? null : sportId
+}
+
+const closeDropdown = (sportId) => {
+  setTimeout(() => {
+    if (openDropdownId.value === sportId) {
+      openDropdownId.value = null
+    }
+  }, 200)
+}
 
 const coachOptions = computed(() => {
   return coaches.value.map(c => ({ value: c.id, label: c.full_name }))
@@ -351,6 +374,7 @@ const fetchCoaches = async () => {
 }
 
 const editSport = (sport) => {
+  openDropdownId.value = null
   form.value = { ...sport }
   editMode.value = true
   showModal.value = true
@@ -537,17 +561,27 @@ onMounted(async () => {
 
 /* Fix z-index stacking context */
 .athlete-card-wrapper {
-  transition: z-index 0s;
+  position: relative;
+  z-index: 1;
 }
 
 .athlete-card-wrapper:hover {
-  z-index: 20;
-  position: relative;
+  z-index: 10;
 }
 
 /* Ensure card with open dropdown is always on top */
-.athlete-card-wrapper:has(.show) {
-  z-index: 100 !important;
-  position: relative;
+.athlete-card-wrapper:has(.dropdown.show),
+.athlete-card-wrapper:has(.dropdown-menu.show) {
+  z-index: 1050 !important;
+}
+
+/* Ensure dropdown menu appears above everything */
+.dropdown-menu {
+  z-index: 1060;
+}
+
+/* Fix card overflow to allow dropdown to show */
+.card {
+  overflow: visible !important;
 }
 </style>

@@ -70,10 +70,20 @@
               <!-- Action Section -->
               <div class="flex-shrink-0 ms-2">
                 <div class="dropdown">
-                  <button class="btn btn-icon btn-light rounded-circle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button 
+                    class="btn btn-icon btn-light rounded-circle shadow-none" 
+                    type="button" 
+                    @click="toggleDropdown(user.id)"
+                    @blur="closeDropdown(user.id)"
+                  >
                     <i class="bi bi-three-dots-vertical text-muted"></i>
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 overflow-hidden">
+                  <ul 
+                    v-if="openDropdownId === user.id"
+                    class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3 overflow-hidden show"
+                    style="position: absolute; right: 0;"
+                    @mousedown.prevent
+                  >
                     <li>
                       <button class="dropdown-item py-2 px-3 small fw-medium text-success" @click="approveUser(user.id)">
                         <i class="bi bi-check-circle me-2"></i>Approve
@@ -103,6 +113,19 @@ import { format } from 'date-fns'
 
 const registrations = ref([])
 const loading = ref(false)
+const openDropdownId = ref(null)
+
+const toggleDropdown = (userId) => {
+  openDropdownId.value = openDropdownId.value === userId ? null : userId
+}
+
+const closeDropdown = (userId) => {
+  setTimeout(() => {
+    if (openDropdownId.value === userId) {
+      openDropdownId.value = null
+    }
+  }, 200)
+}
 
 const formatDate = (date) => {
   if (!date) return '-'
@@ -194,17 +217,27 @@ onMounted(fetchRegistrations)
 
 /* Fix z-index stacking context */
 .athlete-card-wrapper {
-  transition: z-index 0s;
+  position: relative;
+  z-index: 1;
 }
 
 .athlete-card-wrapper:hover {
-  z-index: 20;
-  position: relative;
+  z-index: 10;
 }
 
 /* Ensure card with open dropdown is always on top */
-.athlete-card-wrapper:has(.show) {
-  z-index: 100 !important;
-  position: relative;
+.athlete-card-wrapper:has(.dropdown.show),
+.athlete-card-wrapper:has(.dropdown-menu.show) {
+  z-index: 1050 !important;
+}
+
+/* Ensure dropdown menu appears above everything */
+.dropdown-menu {
+  z-index: 1060;
+}
+
+/* Fix card overflow to allow dropdown to show */
+.card {
+  overflow: visible !important;
 }
 </style>

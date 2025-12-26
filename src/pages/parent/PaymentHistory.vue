@@ -19,11 +19,21 @@
         <div class="card-body p-3 d-flex align-items-center justify-content-between">
           <span class="text-muted small fw-bold">SELECT ATHLETE:</span>
           <div class="dropdown">
-            <button class="btn btn-light bg-light-subtle border-0 rounded-pill ps-3 pe-2 fw-medium d-flex align-items-center text-dark" type="button" data-bs-toggle="dropdown">
+            <button 
+              class="btn btn-light bg-light-subtle border-0 rounded-pill ps-3 pe-2 fw-medium d-flex align-items-center text-dark" 
+              type="button" 
+              @click="toggleDropdown"
+              @blur="closeDropdown"
+            >
               {{ selectedAthlete.full_name }}
               <i class="bi bi-chevron-down ms-2 small"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-4" style="min-width: 250px;">
+            <ul 
+              v-if="showDropdown"
+              class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-4 show" 
+              style="min-width: 250px; position: absolute; right: 0;"
+              @mousedown.prevent
+            >
               <li v-for="athlete in athletes" :key="athlete.id" class="mb-1">
                 <a 
                   class="dropdown-item rounded-3 py-2 px-3 d-flex align-items-center" 
@@ -116,6 +126,17 @@ const selectedAthlete = ref(null)
 const payments = ref([])
 const loading = ref(true)
 const loadingPayments = ref(false)
+const showDropdown = ref(false)
+
+const toggleDropdown = () => {
+  showDropdown.value = !showDropdown.value
+}
+
+const closeDropdown = () => {
+  setTimeout(() => {
+    showDropdown.value = false
+  }, 200)
+}
 
 const fetchAthletes = async () => {
   try {
@@ -160,6 +181,7 @@ const fetchPayments = async () => {
 }
 
 const selectAthlete = (athlete) => {
+  showDropdown.value = false
   selectedAthlete.value = athlete
 }
 
