@@ -5,9 +5,9 @@
         <!-- Profile (Left) -->
         <div class="col-4">
           <router-link 
-            to="/parent/athlete" 
+            to="/parent/profile" 
             class="nav-item d-flex flex-column align-items-center justify-content-center py-2 text-decoration-none"
-            :class="{ 'active': isActive('/parent/athlete') }"
+            :class="{ 'active': isActive('/parent/profile') }"
           >
             <div class="icon-wrapper mb-1">
               <i class="bi bi-person-circle fs-4"></i>

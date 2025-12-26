@@ -158,7 +158,7 @@ const loadingEvents = ref(false)
 const upcomingEvents = ref([])
 
 const menuItems = [
-  { label: 'My Athlete', path: '/parent/athlete', icon: 'bi-person-badge', color: 'primary' },
+  { label: 'My Athletes', path: '/parent/athletes', icon: 'bi-people', color: 'secondary' },
   { label: 'Training', path: '/parent/training-notes', icon: 'bi-journal-check', color: 'success' },
   { label: 'Reports', path: '/parent/reports', icon: 'bi-file-text', color: 'danger' },
   { label: 'Payments', path: '/parent/payments', icon: 'bi-wallet2', color: 'warning' },

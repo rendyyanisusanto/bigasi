@@ -28,6 +28,8 @@ import CoachProfile from '../pages/coach/Profile.vue'
 // Parent pages
 import ParentDashboard from '../pages/parent/Dashboard.vue'
 import AthleteProfile from '../pages/parent/AthleteProfile.vue'
+import ParentAthletes from '../pages/parent/ParentAthletes.vue'
+import ParentProfile from '../pages/parent/Profile.vue'
 import ParentTrainingNotes from '../pages/parent/TrainingNotes.vue'
 import ParentReports from '../pages/parent/Reports.vue'
 import PaymentHistory from '../pages/parent/PaymentHistory.vue'
@@ -159,6 +161,18 @@ const routes = [
         path: '/parent/athlete',
         name: 'AthleteProfile',
         component: AthleteProfile,
+        meta: { requiresAuth: true, role: 'PARENT' }
+    },
+    {
+        path: '/parent/athletes',
+        name: 'ParentAthletes',
+        component: ParentAthletes,
+        meta: { requiresAuth: true, role: 'PARENT' }
+    },
+    {
+        path: '/parent/profile',
+        name: 'ParentProfile',
+        component: ParentProfile,
         meta: { requiresAuth: true, role: 'PARENT' }
     },
     {
