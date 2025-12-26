@@ -62,7 +62,15 @@
               
               <!-- Info Section -->
               <div class="flex-grow-1 ms-3 min-w-0">
-                <h6 class="fw-bold mb-1 text-dark text-truncate">{{ coach.full_name }}</h6>
+                <div class="d-flex align-items-start gap-2 mb-1 flex-wrap">
+                  <h6 class="fw-bold mb-0 text-dark text-truncate">{{ coach.full_name }}</h6>
+                  <span v-if="coach.user_id" class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.6rem; padding: 0.15rem 0.4rem; white-space: nowrap;">
+                    <i class="bi bi-check-circle-fill" style="font-size: 0.55rem;"></i> Account
+                  </span>
+                  <span v-else class="badge bg-secondary-subtle text-secondary border border-secondary-subtle" style="font-size: 0.6rem; padding: 0.15rem 0.4rem; white-space: nowrap;">
+                    <i class="bi bi-x-circle-fill" style="font-size: 0.55rem;"></i> No Account
+                  </span>
+                </div>
                 <div class="d-flex flex-column gap-1">
                   <small class="text-muted text-truncate" v-if="coach.phone">
                     <i class="bi bi-telephone me-1"></i>{{ coach.phone }}
@@ -75,7 +83,7 @@
               
               <!-- Action Section -->
               <div class="flex-shrink-0 ms-2">
-                <div class="dropdown">
+                <div class="dropup">
                   <button class="btn btn-icon btn-light rounded-circle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-three-dots-vertical text-muted"></i>
                   </button>
@@ -86,6 +94,18 @@
                       </button>
                     </li>
                     <li><hr class="dropdown-divider my-0"></li>
+                    <!-- Account Management -->
+                    <li v-if="!coach.user_id">
+                      <button class="dropdown-item py-2 px-3 small fw-medium text-success" @click="createAccount(coach)">
+                        <i class="bi bi-person-plus me-2"></i>Create Account
+                      </button>
+                    </li>
+                    <li v-if="coach.user_id">
+                      <button class="dropdown-item py-2 px-3 small fw-medium text-warning" @click="resetPassword(coach)">
+                        <i class="bi bi-key me-2"></i>Reset Password
+                      </button>
+                    </li>
+                    <li v-if="coach.user_id || !coach.user_id"><hr class="dropdown-divider my-0"></li>
                     <li>
                       <button class="dropdown-item py-2 px-3 small fw-medium text-danger" @click="deleteCoach(coach.id)">
                         <i class="bi bi-trash me-2"></i>Delete Coach
@@ -132,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useUpload } from '../../composables/useUpload'
 import BaseInput from '../../components/base/BaseInput.vue'
@@ -222,21 +242,24 @@ const saveCoach = async () => {
     // Save edit mode before closing
     const wasEditMode = editMode.value
     
-    // Close modal with setTimeout
-    setTimeout(() => {
-      closeModal()
-    }, 100)
-    
-    // Fetch data after delay
-    await new Promise(resolve => setTimeout(resolve, 150))
+    // Refresh coaches list
     await fetchCoaches()
-    await nextTick()
+    
+    // Reset saving state BEFORE closing modal
+    saving.value = false
+    
+    // Close modal
+    closeModal()
+    
+    // Small delay before showing alert
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Show success alert
     alert(wasEditMode ? 'Coach updated successfully!' : 'Coach created successfully!')
   } catch (error) {
     console.error('Error:', error)
-    alert('Failed to save coach: ' + error.message)
-  } finally {
     saving.value = false
+    alert('Failed to save coach: ' + error.message)
   }
 }
 
@@ -248,6 +271,116 @@ const deleteCoach = async (id) => {
     await fetchCoaches()
   } catch (error) {
     console.error('Error:', error)
+  }
+}
+
+const createAccount = async (coach) => {
+  // Check if email exists
+  if (!coach.email || !coach.email.trim()) {
+    alert('Cannot create account: Coach must have an email address. Please edit the coach and add an email first.')
+    return
+  }
+  
+  if (!confirm(`Create account for ${coach.full_name}?\n\nAn account will be created with email: ${coach.email}\nA password reset email will be sent to this address.`)) {
+    return
+  }
+  
+  try {
+    loading.value = true
+    
+    // Generate random password (8 characters)
+    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase()
+    
+    console.log('Creating auth user for:', coach.email)
+    
+    // Create auth user via Supabase Auth signup
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: coach.email,
+      password: tempPassword,
+      options: {
+        emailRedirectTo: window.location.origin + '/reset-password'
+      }
+    })
+    
+    if (authError) throw authError
+    
+    if (!authData.user) {
+      throw new Error('Failed to create user')
+    }
+    
+    console.log('Auth user created:', authData.user.id)
+    
+    // Create app_users record
+    const { error: profileError } = await supabase
+      .from('app_users')
+      .insert({
+        id: authData.user.id,
+        email: coach.email,
+        full_name: coach.full_name,
+        role: 'COACH',
+        photo_url: coach.photo_url
+      })
+    
+    if (profileError) throw profileError
+    
+    console.log('App user profile created')
+    
+    // Update coach's user_id
+    const { error: updateError } = await supabase
+      .from('coaches')
+      .update({ user_id: authData.user.id })
+      .eq('id', coach.id)
+    
+    if (updateError) throw updateError
+    
+    console.log('Coach user_id updated')
+    
+    // Trigger password reset email
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(coach.email, {
+      redirectTo: window.location.origin + '/reset-password'
+    })
+    
+    if (resetError) {
+      console.warn('Password reset email failed:', resetError)
+    }
+    
+    // Refresh coaches list
+    await fetchCoaches()
+    
+    alert(`Account created successfully for ${coach.full_name}!\n\nA password reset email has been sent to ${coach.email}.\nThe coach can use this email to set their password and login.`)
+  } catch (error) {
+    console.error('Error creating account:', error)
+    alert('Failed to create account: ' + error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+const resetPassword = async (coach) => {
+  if (!coach.email || !coach.email.trim()) {
+    alert('Cannot reset password: No email address found for this coach.')
+    return
+  }
+  
+  if (!confirm(`Send password reset email to ${coach.full_name}?\n\nEmail: ${coach.email}`)) {
+    return
+  }
+  
+  try {
+    loading.value = true
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(coach.email, {
+      redirectTo: window.location.origin + '/reset-password'
+    })
+    
+    if (error) throw error
+    
+    alert(`Password reset email sent successfully to ${coach.email}!\n\nThe coach will receive an email with instructions to reset their password.`)
+  } catch (error) {
+    console.error('Error sending reset password email:', error)
+    alert('Failed to send password reset email: ' + error.message)
+  } finally {
+    loading.value = false
   }
 }
 

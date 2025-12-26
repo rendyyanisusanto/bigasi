@@ -321,30 +321,33 @@ const saveAthlete = async () => {
       console.log('Athlete created successfully')
     }
     
-    // Save edit mode before closing
+    // Save edit mode for success message
     const wasEditMode = editMode.value
     
-    // Close modal with setTimeout to avoid unmount errors
-    console.log('Closing modal...')
-    setTimeout(() => {
-      closeModal()
-      console.log('Modal closed')
-    }, 100)
-    
-    // Fetch data after a short delay
+    // Refresh athletes list
     console.log('Fetching athletes...')
-    await new Promise(resolve => setTimeout(resolve, 150))
     await fetchAthletes()
     
-    // Show success alert
-    await nextTick()
-    alert(wasEditMode ? 'Athlete updated successfully!' : 'Athlete created successfully!')
-  } catch (error) {
-    console.error('Error saving athlete:', error)
-    alert('Failed to save athlete: ' + error.message)
-  } finally {
+    // Reset saving state BEFORE closing modal
+    // This prevents reactive state updates during unmount
     saving.value = false
     console.log('Save process finished')
+    
+    // Close modal first BEFORE showing alert
+    // Alert blocks execution, so we need to close the modal first
+    console.log('Closing modal...')
+    closeModal()
+    
+    // Small delay to ensure modal closes properly
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
+    // Show success alert after modal is closed
+    alert(wasEditMode ? 'Athlete updated successfully!' : 'Athlete created successfully!')
+    console.log('Save process completed')
+  } catch (error) {
+    console.error('Error saving athlete:', error)
+    saving.value = false
+    alert('Failed to save athlete: ' + error.message)
   }
 }
 

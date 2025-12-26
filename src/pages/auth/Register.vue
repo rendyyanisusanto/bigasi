@@ -51,9 +51,9 @@
                 <BaseInput
                   v-model="form.athleteNumber"
                   type="text"
-                  label="Athlete Number"
-                  placeholder="Enter your athlete's number"
-                  hint="Enter the athlete number to link your account"
+                  label="Athlete Number (Optional)"
+                  placeholder="Enter athlete number to link"
+                  hint="If you have an athlete, enter their number to link your account"
                   :error="errors.athleteNumber"
                 />
                 
@@ -62,7 +62,9 @@
                 </div>
                 
                 <div v-if="success" class="alert alert-success" role="alert">
-                  Registration successful! Please wait for admin approval.
+                  <strong>Registration successful!</strong>
+                  <p class="mb-1 mt-2">Please check your email and click the confirmation link to activate your account.</p>
+                  <small class="text-muted">Redirecting to login page...</small>
                 </div>
                 
                 <BaseButton
@@ -168,17 +170,32 @@ const handleRegister = async () => {
     if (form.value.athleteNumber) {
       const { data: athlete, error: athleteError } = await supabase
         .from('athletes')
-        .select('id')
+        .select('id, full_name, parent_user_id')
         .eq('athlete_number', form.value.athleteNumber)
-        .single()
+        .maybeSingle()
       
-      if (athleteError || !athlete) {
+      if (athleteError) {
+        console.error('Error finding athlete:', athleteError)
+        errors.value.athleteNumber = 'Error searching for athlete'
+        loading.value = false
+        return
+      }
+      
+      if (!athlete) {
         errors.value.athleteNumber = 'Athlete number not found'
         loading.value = false
         return
       }
       
+      // Check if athlete already has a parent linked
+      if (athlete.parent_user_id) {
+        errors.value.athleteNumber = 'This athlete is already linked to another parent'
+        loading.value = false
+        return
+      }
+      
       athleteId = athlete.id
+      console.log('Found athlete:', athlete.full_name, '- will link to parent')
     }
     
     const result = await register(
@@ -190,6 +207,16 @@ const handleRegister = async () => {
     
     if (result.success) {
       success.value = true
+      
+      // Clear form
+      form.value = {
+        fullName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        athleteNumber: ''
+      }
+      
       setTimeout(() => {
         router.push('/login')
       }, 2000)
@@ -197,6 +224,7 @@ const handleRegister = async () => {
       errors.value.general = result.error || 'Registration failed'
     }
   } catch (error) {
+    console.error('Registration error:', error)
     errors.value.general = error.message || 'Registration failed'
   } finally {
     loading.value = false

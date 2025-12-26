@@ -66,6 +66,65 @@
       <div class="position-absolute bottom-0 start-0 p-4 rounded-circle bg-white opacity-10 mb-n3 ms-n3"></div>
     </div>
 
+    <!-- Upcoming Events Slider -->
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3 ps-1">
+        <h6 class="text-uppercase text-muted fw-bold small mb-0">Upcoming Events</h6>
+        <router-link to="/parent/events" class="text-decoration-none text-primary small fw-medium">
+          View All <i class="bi bi-arrow-right"></i>
+        </router-link>
+      </div>
+      
+      <!-- Loading State -->
+      <div v-if="loadingEvents" class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+      </div>
+      
+      <!-- Empty State -->
+      <div v-else-if="upcomingEvents.length === 0" class="text-center py-4">
+        <i class="bi bi-calendar-x text-muted opacity-50 fs-3"></i>
+        <p class="text-muted small mt-2 mb-0">No upcoming events</p>
+      </div>
+      
+      <!-- Events Slider -->
+      <div v-else class="events-slider-container">
+        <div class="events-slider d-flex gap-3 pb-2" style="overflow-x: auto; scroll-snap-type: x mandatory;">
+          <router-link 
+            v-for="event in upcomingEvents" 
+            :key="event.id" 
+            to="/parent/events"
+            class="event-card flex-shrink-0 text-decoration-none"
+            style="scroll-snap-align: start; width: 280px;"
+          >
+            <div class="card border-0 shadow-sm h-100 hover-scale">
+              <div class="card-body p-3">
+                <div class="d-flex align-items-start gap-2">
+                  <div class="flex-shrink-0 text-center bg-light rounded-3 p-2 border" style="min-width: 50px;">
+                    <div class="small fw-bold text-uppercase text-info mb-0" style="font-size: 0.6rem; line-height: 1;">
+                      {{ formatEventMonth(event.event_date) }}
+                    </div>
+                    <div class="h5 mb-0 fw-bold text-dark" style="line-height: 1.1;">
+                      {{ formatEventDay(event.event_date) }}
+                    </div>
+                  </div>
+                  <div class="flex-grow-1 min-w-0">
+                    <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.9rem;">{{ event.name }}</h6>
+                    <span class="badge rounded-pill bg-soft-info text-info mb-2" style="font-size: 0.65rem;">
+                      {{ event.event_type || 'Event' }}
+                    </span>
+                    <div class="d-flex align-items-center text-muted" style="font-size: 0.75rem;">
+                      <i class="bi bi-geo-alt me-1"></i>
+                      <span class="text-truncate">{{ event.location || 'TBA' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </router-link>
+        </div>
+      </div>
+    </div>
+
     <!-- Menu Grid -->
     <h6 class="text-uppercase text-muted fw-bold small mb-3 ps-1">Menu</h6>
     
@@ -95,6 +154,8 @@ const { user } = useAuth()
 const athletes = ref([])
 const selectedAthlete = ref(null)
 const loading = ref(true)
+const loadingEvents = ref(false)
+const upcomingEvents = ref([])
 
 const menuItems = [
   { label: 'My Athlete', path: '/parent/athlete', icon: 'bi-person-badge', color: 'primary' },
@@ -132,10 +193,44 @@ const selectAthlete = (athlete) => {
   // For now, it just updates the local view context
 }
 
+const fetchUpcomingEvents = async () => {
+  try {
+    loadingEvents.value = true
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .gte('event_date', new Date().toISOString().split('T')[0])
+      .order('event_date', { ascending: true })
+      .limit(5)
+    
+    if (error) {
+      console.error('Error fetching events:', error)
+      return
+    }
+    
+    upcomingEvents.value = data || []
+  } catch (error) {
+    console.error('Error:', error)
+  } finally {
+    loadingEvents.value = false
+  }
+}
+
+const formatEventMonth = (date) => {
+  return new Date(date).toLocaleString('default', { month: 'short' })
+}
+
+const formatEventDay = (date) => {
+  return new Date(date).getDate()
+}
+
 // Watch for selection change to potentially update other components or fetches if we had them on dashboard
 // (Currently dashboard menu links are static, but if widgets were here, we'd refetch)
 
-onMounted(fetchAthletes)
+onMounted(async () => {
+  await fetchAthletes()
+  await fetchUpcomingEvents()
+})
 </script>
 
 <style scoped>
@@ -189,6 +284,50 @@ onMounted(fetchAthletes)
 .bg-warning-subtle { background-color: rgba(255, 193, 7, 0.1); }
 .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1); }
 .bg-dark-subtle { background-color: rgba(33, 37, 41, 0.1); }
+.bg-soft-info { background-color: rgba(13, 202, 240, 0.1); }
+
+/* Events Slider */
+.events-slider-container {
+  margin: 0 -0.5rem;
+}
+
+.events-slider {
+  padding: 0 0.5rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.events-slider::-webkit-scrollbar {
+  height: 6px;
+}
+
+.events-slider::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 0 0.5rem;
+}
+
+.events-slider::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.events-slider::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.event-card .card {
+  transition: all 0.2s ease;
+}
+
+.event-card:hover .card {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
 
 /* Ensure card content with dropdown is above decorative circles */
 .card-body.z-1:has(.dropdown-menu.show) {

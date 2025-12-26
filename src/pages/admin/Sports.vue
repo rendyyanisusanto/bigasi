@@ -55,7 +55,12 @@
               
               <!-- Info Section -->
               <div class="flex-grow-1 ms-3 min-w-0">
-                <h6 class="fw-bold mb-1 text-dark text-truncate">{{ sport.name }}</h6>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <h6 class="fw-bold mb-0 text-dark text-truncate">{{ sport.name }}</h6>
+                  <span class="badge bg-primary-subtle text-primary" style="font-size: 0.7rem;">
+                    <i class="bi bi-people me-1"></i>{{ getAthleteCount(sport.id) }}
+                  </span>
+                </div>
                 <div class="d-flex flex-column gap-1">
                   <small class="text-muted text-truncate" v-if="sport.coach_id">
                     <i class="bi bi-person-badge me-1"></i>{{ getCoachName(sport.coach_id) }}
@@ -76,6 +81,11 @@
                     <li>
                       <button class="dropdown-item py-2 px-3 small fw-medium" @click="editSport(sport)">
                         <i class="bi bi-pencil me-2 text-primary"></i>Edit Details
+                      </button>
+                    </li>
+                    <li>
+                      <button class="dropdown-item py-2 px-3 small fw-medium text-success" @click="manageAthletes(sport)">
+                        <i class="bi bi-people me-2"></i>Manage Athletes
                       </button>
                     </li>
                     <li><hr class="dropdown-divider my-0"></li>
@@ -122,6 +132,123 @@
       </div>
     </div>
     <div v-if="showModal" class="modal-backdrop show"></div>
+    
+    <!-- Athletes Management Modal -->
+    <div v-if="showAthletesModal" class="modal show d-block" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-people me-2"></i>{{ selectedSport?.name }} - Athletes
+            </h5>
+            <button type="button" class="btn-close" @click="closeAthletesModal"></button>
+          </div>
+          <div class="modal-body p-0">
+            <!-- Search -->
+            <div class="p-3 border-bottom bg-light">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                  <i class="bi bi-search"></i>
+                </span>
+                <input 
+                  v-model="athleteSearch" 
+                  type="text" 
+                  class="form-control border-start-0 shadow-none" 
+                  placeholder="Search athletes..."
+                />
+              </div>
+            </div>
+            
+            <!-- Tabs (Mobile friendly) -->
+            <ul class="nav nav-tabs px-3 pt-2" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button 
+                  class="nav-link" 
+                  :class="{ active: activeTab === 'assigned' }"
+                  @click="activeTab = 'assigned'"
+                  type="button"
+                >
+                  <i class="bi bi-check-circle me-1"></i>Assigned ({{ assignedAthletes.length }})
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button 
+                  class="nav-link" 
+                  :class="{ active: activeTab === 'available' }"
+                  @click="activeTab = 'available'"
+                  type="button"
+                >
+                  <i class="bi bi-person-plus me-1"></i>Available ({{ availableAthletes.length }})
+                </button>
+              </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content">
+              <!-- Assigned Athletes Tab -->
+              <div v-show="activeTab === 'assigned'" class="p-3">
+                <div v-if="filteredAssignedAthletes.length === 0" class="text-center text-muted py-4">
+                  <i class="bi bi-inbox display-4 opacity-25"></i>
+                  <p class="mt-2">No athletes assigned</p>
+                </div>
+                <div v-else class="list-group list-group-flush">
+                  <div 
+                    v-for="athlete in filteredAssignedAthletes" 
+                    :key="athlete.id"
+                    class="list-group-item d-flex align-items-center px-0 py-2"
+                  >
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="fw-medium text-truncate">{{ athlete.full_name }}</div>
+                      <small class="text-muted">#{{ athlete.athlete_number }}</small>
+                    </div>
+                    <button 
+                      class="btn btn-sm btn-outline-danger rounded-circle ms-2"
+                      style="width: 32px; height: 32px; padding: 0;"
+                      @click="unassignAthlete(athlete.id)"
+                      :disabled="assignLoading"
+                    >
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Available Athletes Tab -->
+              <div v-show="activeTab === 'available'" class="p-3">
+                <div v-if="filteredAvailableAthletes.length === 0" class="text-center text-muted py-4">
+                  <i class="bi bi-inbox display-4 opacity-25"></i>
+                  <p class="mt-2">No available athletes</p>
+                </div>
+                <div v-else class="list-group list-group-flush">
+                  <div 
+                    v-for="athlete in filteredAvailableAthletes" 
+                    :key="athlete.id"
+                    class="list-group-item d-flex align-items-center px-0 py-2"
+                  >
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="fw-medium text-truncate">{{ athlete.full_name }}</div>
+                      <small class="text-muted">#{{ athlete.athlete_number }}</small>
+                    </div>
+                    <button 
+                      class="btn btn-sm btn-success rounded-circle ms-2"
+                      style="width: 32px; height: 32px; padding: 0;"
+                      @click="assignAthlete(athlete.id)"
+                      :disabled="assignLoading"
+                    >
+                      <i class="bi bi-plus-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeAthletesModal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="showAthletesModal" class="modal-backdrop show"></div>
   </div>
 </template>
 
@@ -133,10 +260,17 @@ import BaseButton from '../../components/base/BaseButton.vue'
 
 const sports = ref([])
 const coaches = ref([])
+const athletes = ref([])
+const athleteSports = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const showModal = ref(false)
 const editMode = ref(false)
+const showAthletesModal = ref(false)
+const selectedSport = ref(null)
+const activeTab = ref('assigned')
+const athleteSearch = ref('')
+const assignLoading = ref(false)
 
 const form = ref({
   id: null,
@@ -150,9 +284,47 @@ const coachOptions = computed(() => {
   return coaches.value.map(c => ({ value: c.id, label: c.full_name }))
 })
 
+const assignedAthletes = computed(() => {
+  if (!selectedSport.value) return []
+  const assignedIds = athleteSports.value
+    .filter(as => as.sport_id === selectedSport.value.id)
+    .map(as => as.athlete_id)
+  return athletes.value.filter(a => assignedIds.includes(a.id))
+})
+
+const availableAthletes = computed(() => {
+  if (!selectedSport.value) return []
+  const assignedIds = athleteSports.value
+    .filter(as => as.sport_id === selectedSport.value.id)
+    .map(as => as.athlete_id)
+  return athletes.value.filter(a => !assignedIds.includes(a.id) && a.is_active)
+})
+
+const filteredAssignedAthletes = computed(() => {
+  if (!athleteSearch.value) return assignedAthletes.value
+  const search = athleteSearch.value.toLowerCase()
+  return assignedAthletes.value.filter(a => 
+    a.full_name.toLowerCase().includes(search) ||
+    a.athlete_number.toLowerCase().includes(search)
+  )
+})
+
+const filteredAvailableAthletes = computed(() => {
+  if (!athleteSearch.value) return availableAthletes.value
+  const search = athleteSearch.value.toLowerCase()
+  return availableAthletes.value.filter(a => 
+    a.full_name.toLowerCase().includes(search) ||
+    a.athlete_number.toLowerCase().includes(search)
+  )
+})
+
 const getCoachName = (coachId) => {
   const coach = coaches.value.find(c => c.id === coachId)
   return coach ? coach.full_name : '-'
+}
+
+const getAthleteCount = (sportId) => {
+  return athleteSports.value.filter(as => as.sport_id === sportId).length
 }
 
 const fetchSports = async () => {
@@ -231,8 +403,95 @@ const closeModal = () => {
   form.value = { id: null, name: '', coach_id: '', schedule: '', description: '' }
 }
 
+const fetchAthletes = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('athletes')
+      .select('*')
+      .order('full_name')
+    if (error) throw error
+    athletes.value = data || []
+  } catch (error) {
+    console.error('Error:', error)
+  }
+}
+
+const fetchAthleteSports = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('athlete_sports')
+      .select('*')
+    if (error) throw error
+    athleteSports.value = data || []
+  } catch (error) {
+    console.error('Error:', error)
+  }
+}
+
+const manageAthletes = (sport) => {
+  selectedSport.value = sport
+  activeTab.value = 'assigned'
+  athleteSearch.value = ''
+  showAthletesModal.value = true
+}
+
+const assignAthlete = async (athleteId) => {
+  try {
+    assignLoading.value = true
+    
+    const { error } = await supabase
+      .from('athlete_sports')
+      .insert({
+        athlete_id: athleteId,
+        sport_id: selectedSport.value.id
+      })
+    
+    if (error) {
+      if (error.code === '23505') {
+        alert('Athlete already assigned to this sport')
+      } else {
+        throw error
+      }
+    } else {
+      await fetchAthleteSports()
+    }
+  } catch (error) {
+    console.error('Error:', error)
+    alert('Failed to assign athlete: ' + error.message)
+  } finally {
+    assignLoading.value = false
+  }
+}
+
+const unassignAthlete = async (athleteId) => {
+  try {
+    assignLoading.value = true
+    
+    const { error } = await supabase
+      .from('athlete_sports')
+      .delete()
+      .eq('athlete_id', athleteId)
+      .eq('sport_id', selectedSport.value.id)
+    
+    if (error) throw error
+    
+    await fetchAthleteSports()
+  } catch (error) {
+    console.error('Error:', error)
+    alert('Failed to unassign athlete: ' + error.message)
+  } finally {
+    assignLoading.value = false
+  }
+}
+
+const closeAthletesModal = () => {
+  showAthletesModal.value = false
+  selectedSport.value = null
+  athleteSearch.value = ''
+}
+
 onMounted(async () => {
-  await Promise.all([fetchSports(), fetchCoaches()])
+  await Promise.all([fetchSports(), fetchCoaches(), fetchAthletes(), fetchAthleteSports()])
 })
 </script>
 

@@ -4,6 +4,7 @@ import { useAuth } from '../composables/useAuth'
 // Auth pages
 import Login from '../pages/auth/Login.vue'
 import Register from '../pages/auth/Register.vue'
+import ResetPassword from '../pages/auth/ResetPassword.vue'
 
 // Admin pages
 import AdminDashboard from '../pages/admin/Dashboard.vue'
@@ -22,6 +23,7 @@ import MyAthletes from '../pages/coach/MyAthletes.vue'
 import TrainingNotes from '../pages/coach/TrainingNotes.vue'
 import CoachReports from '../pages/coach/Reports.vue'
 import CoachEvents from '../pages/coach/Events.vue'
+import CoachProfile from '../pages/coach/Profile.vue'
 
 // Parent pages
 import ParentDashboard from '../pages/parent/Dashboard.vue'
@@ -46,6 +48,12 @@ const routes = [
         path: '/register',
         name: 'Register',
         component: Register,
+        meta: { requiresGuest: true }
+    },
+    {
+        path: '/reset-password',
+        name: 'ResetPassword',
+        component: ResetPassword,
         meta: { requiresGuest: true }
     },
     // Admin routes
@@ -132,6 +140,12 @@ const routes = [
         path: '/coach/events',
         name: 'CoachEvents',
         component: CoachEvents,
+        meta: { requiresAuth: true, role: 'COACH' }
+    },
+    {
+        path: '/coach/profile',
+        name: 'CoachProfile',
+        component: CoachProfile,
         meta: { requiresAuth: true, role: 'COACH' }
     },
     // Parent routes

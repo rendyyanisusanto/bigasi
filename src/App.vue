@@ -6,13 +6,14 @@
         <AppHeader />
         <div class="app-container">
           <AppSidebar ref="sidebar" />
-          <main class="main-content" :class="{ 'pb-5 mb-5': isAdmin }">
+          <main class="main-content" :class="{ 'pb-5 mb-5': isAdmin || isCoach }">
             <div class="container-fluid py-4">
               <router-view />
             </div>
           </main>
         </div>
         <AdminBottomNav v-if="isAdmin" />
+        <CoachBottomNav v-if="isCoach" />
       </template>
       
       <!-- Parent Layout -->
@@ -41,8 +42,9 @@ import AppHeader from './components/layout/AppHeader.vue'
 import AppSidebar from './components/layout/AppSidebar.vue'
 import ParentBottomNav from './components/layout/ParentBottomNav.vue'
 import AdminBottomNav from './components/layout/AdminBottomNav.vue'
+import CoachBottomNav from './components/layout/CoachBottomNav.vue'
 
-const { isAuthenticated, initAuth, isParent, isAdmin } = useAuth()
+const { isAuthenticated, initAuth, isParent, isAdmin, isCoach } = useAuth()
 const { fetchSettings } = useSettings()
 
 onMounted(async () => {

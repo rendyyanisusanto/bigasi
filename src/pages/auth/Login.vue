@@ -60,14 +60,15 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 import BaseInput from '../../components/base/BaseInput.vue'
 import BaseButton from '../../components/base/BaseButton.vue'
 import AppLogo from '../../components/common/AppLogo.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { login, userRole } = useAuth()
 
 const form = ref({
@@ -127,6 +128,27 @@ const handleLogin = async () => {
     errors.value.general = result.error || 'Invalid email or password'
   }
 }
+
+// Check for error in URL (from email confirmation/reset password)
+onMounted(() => {
+  const error = route.query.error
+  const errorCode = route.query.error_code
+  const errorDescription = route.query.error_description
+  
+  if (error) {
+    // Clear URL parameters
+    router.replace({ query: {} })
+    
+    // Show user-friendly error message based on error code
+    if (errorCode === 'otp_expired') {
+      errors.value.general = 'Email link has expired. Please request a new confirmation or password reset email.'
+    } else if (error === 'access_denied') {
+      errors.value.general = 'Email link is invalid or has already been used. Please request a new one if needed.'
+    } else {
+      errors.value.general = errorDescription || 'An error occurred with the email link. Please try again.'
+    }
+  }
+})
 </script>
 
 <style scoped>
