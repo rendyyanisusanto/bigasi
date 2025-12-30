@@ -265,8 +265,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
+import { useSupabaseQuery } from '../../composables/useSupabaseQuery'
 import BaseInput from '../../components/base/BaseInput.vue'
 import BaseButton from '../../components/base/BaseButton.vue'
+
+const { executeQuery } = useSupabaseQuery()
 
 const sports = ref([])
 const coaches = ref([])
@@ -353,11 +356,13 @@ const getAthleteCount = (sportId) => {
 const fetchSports = async () => {
   try {
     loading.value = true
-    const { data, error } = await supabase.from('sports').select('*').order('name')
-    if (error) throw error
-    sports.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('sports').select('*').order('name')
+    )
+    sports.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching sports:', error)
+    alert('Failed to load sports data. Please refresh the page.')
   } finally {
     loading.value = false
   }
@@ -365,11 +370,12 @@ const fetchSports = async () => {
 
 const fetchCoaches = async () => {
   try {
-    const { data, error } = await supabase.from('coaches').select('id, full_name').eq('is_active', true)
-    if (error) throw error
-    coaches.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('coaches').select('id, full_name').eq('is_active', true)
+    )
+    coaches.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching coaches:', error)
   }
 }
 
@@ -429,26 +435,23 @@ const closeModal = () => {
 
 const fetchAthletes = async () => {
   try {
-    const { data, error } = await supabase
-      .from('athletes')
-      .select('*')
-      .order('full_name')
-    if (error) throw error
-    athletes.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('athletes').select('*').order('full_name')
+    )
+    athletes.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching athletes:', error)
   }
 }
 
 const fetchAthleteSports = async () => {
   try {
-    const { data, error } = await supabase
-      .from('athlete_sports')
-      .select('*')
-    if (error) throw error
-    athleteSports.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('athlete_sports').select('*')
+    )
+    athleteSports.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching athlete sports:', error)
   }
 }
 

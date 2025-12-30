@@ -101,9 +101,9 @@
                   
                   <div class="d-flex align-items-center text-muted small mt-2">
                     <i class="bi bi-calendar3 me-1"></i>
-                    <span class="me-2">{{ payment.payment_period }}</span>
+                    <span class="me-2">{{ payment.period }}</span>
                     <span class="text-muted mx-1">•</span>
-                    <span class="text-truncate">{{ new Date(payment.payment_date).toLocaleDateString() }}</span>
+                    <span class="text-truncate">{{ new Date(payment.created_at).toLocaleDateString() }}</span>
                   </div>
                 </div>
               </div>
@@ -169,7 +169,7 @@ const fetchPayments = async () => {
       .from('payments')
       .select('*')
       .eq('athlete_id', selectedAthlete.value.id)
-      .order('payment_date', { ascending: false })
+      .order('created_at', { ascending: false })
       
     if (error) throw error
     payments.value = data || []

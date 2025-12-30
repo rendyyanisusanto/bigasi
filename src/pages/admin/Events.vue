@@ -145,9 +145,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
+import { useSupabaseQuery } from '../../composables/useSupabaseQuery'
 import { format } from 'date-fns'
 import BaseInput from '../../components/base/BaseInput.vue'
 import BaseButton from '../../components/base/BaseButton.vue'
+
+const { executeQuery } = useSupabaseQuery()
 
 const events = ref([])
 const sports = ref([])
@@ -191,11 +194,13 @@ const formatDate = (date) => {
 const fetchEvents = async () => {
   try {
     loading.value = true
-    const { data, error } = await supabase.from('events').select('*').order('event_date', { ascending: false })
-    if (error) throw error
-    events.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('events').select('*').order('event_date', { ascending: false })
+    )
+    events.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching events:', error)
+    alert('Failed to load events data. Please refresh the page.')
   } finally {
     loading.value = false
   }
@@ -203,11 +208,12 @@ const fetchEvents = async () => {
 
 const fetchSports = async () => {
   try {
-    const { data, error } = await supabase.from('sports').select('id, name')
-    if (error) throw error
-    sports.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('sports').select('id, name')
+    )
+    sports.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching sports:', error)
   }
 }
 

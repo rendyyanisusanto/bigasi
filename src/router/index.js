@@ -5,6 +5,7 @@ import { useAuth } from '../composables/useAuth'
 import Login from '../pages/auth/Login.vue'
 import Register from '../pages/auth/Register.vue'
 import ResetPassword from '../pages/auth/ResetPassword.vue'
+import Callback from '../pages/auth/Callback.vue'
 
 // Admin pages
 import AdminDashboard from '../pages/admin/Dashboard.vue'
@@ -57,6 +58,11 @@ const routes = [
         name: 'ResetPassword',
         component: ResetPassword,
         meta: { requiresGuest: true }
+    },
+    {
+        path: '/auth/callback',
+        name: 'AuthCallback',
+        component: Callback
     },
     // Admin routes
     {

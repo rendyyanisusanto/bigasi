@@ -122,10 +122,16 @@ export function useAuth() {
         try {
             loading.value = true
 
+            // Get the redirect URL (works in both dev and production)
+            const redirectUrl = `${window.location.origin}/auth/callback`
+
             // Create auth user
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
-                password
+                password,
+                options: {
+                    emailRedirectTo: redirectUrl
+                }
             })
 
             if (authError) throw authError
@@ -161,6 +167,28 @@ export function useAuth() {
         }
     }
 
+    // Ensure valid session before data operations
+    const ensureValidSession = async () => {
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession()
+
+            if (error) {
+                console.error('Session error:', error)
+                return false
+            }
+
+            if (!session) {
+                console.warn('No active session')
+                return false
+            }
+
+            return true
+        } catch (error) {
+            console.error('Error checking session:', error)
+            return false
+        }
+    }
+
     return {
         user,
         profile,
@@ -174,6 +202,7 @@ export function useAuth() {
         login,
         logout,
         register,
-        fetchProfile
+        fetchProfile,
+        ensureValidSession
     }
 }

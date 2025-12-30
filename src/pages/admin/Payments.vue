@@ -140,10 +140,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../composables/useAuth'
+import { useSupabaseQuery } from '../../composables/useSupabaseQuery'
 import BaseInput from '../../components/base/BaseInput.vue'
 import BaseButton from '../../components/base/BaseButton.vue'
 
 const { user } = useAuth()
+const { executeQuery } = useSupabaseQuery()
+
 const payments = ref([])
 const athletes = ref([])
 const loading = ref(false)
@@ -182,11 +185,13 @@ const formatAmount = (amount) => {
 const fetchPayments = async () => {
   try {
     loading.value = true
-    const { data, error } = await supabase.from('payments').select('*').order('created_at', { ascending: false })
-    if (error) throw error
-    payments.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('payments').select('*').order('created_at', { ascending: false })
+    )
+    payments.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching payments:', error)
+    alert('Failed to load payments data. Please refresh the page.')
   } finally {
     loading.value = false
   }
@@ -194,11 +199,12 @@ const fetchPayments = async () => {
 
 const fetchAthletes = async () => {
   try {
-    const { data, error } = await supabase.from('athletes').select('id, full_name, athlete_number').eq('is_active', true)
-    if (error) throw error
-    athletes.value = data || []
+    const result = await executeQuery(() => 
+      supabase.from('athletes').select('id, full_name, athlete_number').eq('is_active', true)
+    )
+    athletes.value = result.data || []
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error fetching athletes:', error)
   }
 }
 

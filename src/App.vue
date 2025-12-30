@@ -8,7 +8,7 @@
           <AppSidebar ref="sidebar" />
           <main class="main-content" :class="{ 'pb-5 mb-5': isAdmin || isCoach }">
             <div class="container-fluid py-4">
-              <router-view />
+              <router-view :key="$route.fullPath" />
             </div>
           </main>
         </div>
@@ -20,7 +20,7 @@
       <template v-else>
         <main class="parent-content pb-5 mb-4">
           <div class="container-fluid py-3 px-3">
-             <router-view />
+             <router-view :key="$route.fullPath" />
           </div>
         </main>
         <ParentBottomNav />
@@ -29,7 +29,7 @@
     
     <!-- Public Layout -->
     <template v-else>
-      <router-view />
+      <router-view :key="$route.fullPath" />
     </template>
   </div>
 </template>
